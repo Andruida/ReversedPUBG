@@ -68,10 +68,10 @@ async def on_ready():
 	
 @bot.event
 async def on_message(message):
-	if message.guild:
-		print("[("+message.guild.name+") "+message.channel.name+" : "+message.author.name+"] "+message.content)
-	else:
-		print("["+message.author.name+"] "+message.content)
+	# if message.guild:
+		# print("[("+message.guild.name+") "+message.channel.name+" : "+message.author.name+"] "+message.content)
+	# else:
+		# print("["+message.author.name+"] "+message.content)
 	await bot.process_commands(message)
 	
 
