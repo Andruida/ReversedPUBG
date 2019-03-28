@@ -128,10 +128,10 @@ async def update_toplist(message):
 			loops += 1
 			#embed.add_field(name=str(loops)+". "+item.title, value=item.desc, inline=False)
 			#embed.description += str(loops)+". "+item.title+"\n"
-			if len(item.title) < 60:
-				topstr += str(loops)+". "+item.title+"\n"
+			if len(item.title) < 50:
+				topstr += str(loops)+". "+item.title+" - "+str(item.votes)+" szavazat\n"
 			else:
-				topstr += str(loops)+". "+item.title[:60]+"...\n"
+				topstr += str(loops)+". "+item.title[:60]+"...- "+str(item.votes)+" szavazat\n"
 	embed.add_field(name="Top 10:", value=topstr, inline=False)
 	try:
 		await message.edit(embed=embed)
