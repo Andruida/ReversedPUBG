@@ -203,7 +203,7 @@ async def top(ctx, num=1):
 
 
 		
-@bot.command(aliases=["toplista", "toplist"])
+@bot.command(aliases=["toplist"])
 async def toplista(ctx):
 	# try:
 		# await ctx.message.delete()
