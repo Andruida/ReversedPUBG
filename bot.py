@@ -236,7 +236,7 @@ async def toplista(ctx):
 @bot.group()
 async def vote(ctx):
 	if ctx.invoked_subcommand is None:
-		await ctx.send("Használat: `!vote map [idő]`")
+		await ctx.send("Használat: `!vote map [idő]`", delete_after=10.0)
 
 @vote.command(name="map")
 async def votemap(ctx, time="120"):
