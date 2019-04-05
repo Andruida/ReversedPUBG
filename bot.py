@@ -131,8 +131,8 @@ async def update_toplist(message):
 			if len(item.title) < 50:
 				topstr += str(loops)+". "+item.title+" - "+str(item.votes)+" szavazat\n"
 			else:
-				topstr += str(loops)+". "+item.title[:60]+"...- "+str(item.votes)+" szavazat\n"
-	embed.add_field(name="Top 10:", value=topstr, inline=False)
+				topstr += str(loops)+". "+item.title[:50]+"...- "+str(item.votes)+" szavazat\n"
+	embed.add_field(name="Top 10:", value=topstr if len(topstr) > 0 else "Nincs koncepció", inline=False)
 	try:
 		await message.edit(embed=embed)
 	except:
@@ -214,6 +214,7 @@ async def toplista(ctx):
 		color=0xf3b221, 
 		description="Legtöbb szavazattal rendelkező koncepciók",
 		title="Toplista")
+	# embed.set_author(name="Andruida")
 	loops = 0
 	topstr = ""
 	for item in top:
@@ -221,14 +222,62 @@ async def toplista(ctx):
 			loops += 1
 			#embed.add_field(name=str(loops)+". "+item.title, value=item.desc, inline=False)
 			#embed.description += str(loops)+". "+item.title+"\n"
-			if len(item.title) < 60:
-				topstr += str(loops)+". "+item.title+"\n"
+			if len(item.title) < 50:
+				topstr += str(loops)+". "+item.title+" - "+str(item.votes)+" szavazat\n"
 			else:
-				topstr += str(loops)+". "+item.title[:60]+"...\n"
-	embed.add_field(name="Top 10:", value=topstr, inline=False)
+				topstr += str(loops)+". "+item.title[:50]+"...- "+str(item.votes)+" szavazat\n"
+	embed.add_field(name="Top 10:", value=topstr if len(topstr) > 0 else "Nincs koncepció", inline=False)
 	# embed.add_field(name="field4", value="field4 értéke", inline=True)
 	answer = await ctx.send(embed=embed)
 	await ctx.message.add_reaction("\U0001F5D1") # :wastebasket:
 	attachedMessages[str(ctx.message.id)] = [ctx.message, answer]
+#
+
+@bot.group()
+async def vote(ctx):
+	if ctx.invoked_subcommand is None:
+		await ctx.send("Használat: `!vote map [idő]`")
+
+@vote.command(name="map")
+async def votemap(ctx, time="120"):
+	if not str(time).isdigit() or int(time) > 3600:
+		time = 120
+	else:
+		time = int(time)
+	try:
+		await ctx.message.delete()
+	except:
+		pass
+	embed = discord.Embed(
+		color=0xf3b221, 
+		description="**A pályaválasztás elkezdődött!** - "+str(time)+" másodperc van hátra.\n*Reakciókkal tudod leadni a szavazatodat.*\n:white_circle: Erangel\n:red_circle: Miramar\n:large_blue_circle: Sanhok\n:black_circle: Vikendi",
+		title="Map választás")
+	answer = await ctx.send(embed=embed)
+	await answer.add_reaction("\U000026AA") # :white_circle:
+	await answer.add_reaction("\U0001F534") # :red_circle:
+	await answer.add_reaction("\U0001F535") # :large_blue_circle:
+	await answer.add_reaction("\U000026AB") # :black_circle:
+	#attachedMessages[str(ctx.message.id)] = [ctx.message, answer]
+	await asyncio.sleep(time)
+	try:
+		tracked = await ctx.fetch_message(answer.id)
+		await answer.delete()
+	except:
+		pass
+	else:
+		maps = [
+			{"name": "Erangel", "count":discord.utils.get(tracked.reactions, emoji="\U000026AA").count - 1, "emoji":":white_circle:"},
+			{"name": "Miramar", "count":discord.utils.get(tracked.reactions, emoji="\U0001F534").count -1, "emoji":":red_circle:"},
+			{"name": "Sanhok", "count":discord.utils.get(tracked.reactions, emoji="\U0001F535").count - 1, "emoji":":large_blue_circle:"},
+			{"name": "Vikendi", "count":discord.utils.get(tracked.reactions, emoji="\U000026AB").count -1, "emoji":":black_circle:"}
+		]
+		winner = max(maps, key=lambda x: x["count"])
+		embed = discord.Embed(
+			color=0xf3b221,
+			title="A szavazás véget ért")
+		embed.add_field(name="Eredmények:", value=":white_circle: Erangel - {0} szavazat\n:red_circle: Miramar - {1} szavazat\n:large_blue_circle: Sanhok - {2} szavazat\n:black_circle: Vikendi - {3} szavazat".format(str(maps[0]["count"]), str(maps[1]["count"]), str(maps[2]["count"]), str(maps[3]["count"])), inline=False)
+		embed.add_field(name="Győztes:", value="{2} **{0}** - {1} szavazattal".format(winner["name"], str(winner["count"]), winner["emoji"]), inline=False)
+		await ctx.send(embed=embed, delete_after=300.0)
+	
 
 bot.run(TOKEN)
