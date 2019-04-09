@@ -114,7 +114,7 @@ async def on_raw_reaction_remove(payload):
 	
 async def update_toplist(message):
 	top = sqlConn.execute(sqlTables.concepts.select().order_by(sqlTables.concepts.c.votes.desc()).limit(10)).fetchmany(10)
-	print(top)
+	#print(top)
 	embed = discord.Embed(
 		color=0xf3b221, 
 		description="Legtöbb szavazattal rendelkező koncepciók",
