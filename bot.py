@@ -15,12 +15,27 @@ logger.addHandler(handler)
 
 default_prefix = "!"
 
-sqlEngine = sql.create_engine("sqlite:///botdata.sqlite3")
+
+import traceback
+
+try:
+	with open("config.json", encoding="utf-8") as f:
+		config = json.loads(f.read())
+		for k in ["token", "dbip", "dbname", "dbuser", "dbpass"]:
+			a = config[k]
+except:
+	print("VALAMI NEM JÓ A config.json FÁJLBAN:")
+	traceback.print_exc()
+	exit()
+
+TOKEN = config["token"]
+
+sqlEngine = sql.create_engine("mysql+pymysql://"+config["dbuser"]+":"+config["dbpass"]+"@"+config["dbip"]+":3306/"+config["dbname"], pool_pre_ping=True)
 sqlConn = sqlEngine.connect()
 sqlMetadata = sql.MetaData(sqlEngine)
 
 class sqlTablesHolder():
-	concepts = sql.Table("concepts", sqlMetadata, sql.Column('id', sql.Integer, primary_key=True, nullable=False), sql.Column('message_id', sql.String), sql.Column('channel_id', sql.String), sql.Column('guild_id', sql.String), sql.Column('title', sql.String), sql.Column('desc', sql.String), sql.Column('author_id', sql.String), sql.Column('votes', sql.Integer))
+	concepts = sql.Table("concepts", sqlMetadata, sql.Column('id', sql.Integer, primary_key=True, nullable=False), sql.Column('message_id', sql.String(32)), sql.Column('channel_id', sql.String(32)), sql.Column('guild_id', sql.String(32)), sql.Column('title', sql.String(1024)), sql.Column('desc', sql.String(2048)), sql.Column('author_id', sql.String(32)), sql.Column('votes', sql.Integer))
 
 sqlTables = sqlTablesHolder()
 
@@ -31,23 +46,6 @@ attachedMessages = {}
 toplistaData = {"message_id":"560878684282814504", "channel_id":"560145378960474143", "guild_id":"488723895394893825","message":None}
 
 
-
-
-TOKEN = ""
-try:
-	with open("key.txt") as f:
-		try:
-			TOKEN = f.read()
-		except:
-			print(27*"=")
-			raise(" Can't access key.txt file")
-			print(27*"=")
-			exit()
-except:
-	print(23*"=")
-	print(" NO key.txt FILE FOUND")
-	print(23*"=")
-	exit()
 
 
 bot = commands.Bot(command_prefix=default_prefix)
@@ -115,7 +113,8 @@ async def on_raw_reaction_remove(payload):
 				await update_toplist(toplistaData["message"])
 	
 async def update_toplist(message):
-	top = sqlConn.execute(sqlTables.concepts.select().order_by(sqlTables.concepts.c.votes.desc()).limit(10)).fetchmany(-1)
+	top = sqlConn.execute(sqlTables.concepts.select().order_by(sqlTables.concepts.c.votes.desc()).limit(10)).fetchmany(10)
+	print(top)
 	embed = discord.Embed(
 		color=0xf3b221, 
 		description="Legtöbb szavazattal rendelkező koncepciók",
@@ -209,7 +208,7 @@ async def toplista(ctx):
 		# await ctx.message.delete()
 	# except:
 		# pass
-	top = sqlConn.execute(sqlTables.concepts.select().order_by(sqlTables.concepts.c.votes.desc()).limit(10)).fetchmany(-1)
+	top = sqlConn.execute(sqlTables.concepts.select().order_by(sqlTables.concepts.c.votes.desc()).limit(10)).fetchmany(10)
 	embed = discord.Embed(
 		color=0xf3b221, 
 		description="Legtöbb szavazattal rendelkező koncepciók",

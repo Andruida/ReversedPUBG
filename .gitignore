@@ -116,3 +116,4 @@ dmypy.json
 
 *.sqlite3
 key.txt
+config.json
