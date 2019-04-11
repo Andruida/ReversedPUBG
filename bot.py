@@ -1,3 +1,6 @@
+# TODO: on_join eventek
+
+
 import discord
 import asyncio
 import json
@@ -35,7 +38,7 @@ sqlConn = sqlEngine.connect()
 sqlMetadata = sql.MetaData(sqlEngine)
 
 class sqlTablesHolder():
-	concepts = sql.Table("concepts", sqlMetadata, sql.Column('id', sql.Integer, primary_key=True, nullable=False), sql.Column('message_id', sql.String(32)), sql.Column('channel_id', sql.String(32)), sql.Column('guild_id', sql.String(32)), sql.Column('title', sql.String(1024)), sql.Column('desc', sql.String(2048)), sql.Column('author_id', sql.String(32)), sql.Column('votes', sql.Integer))
+	concepts = sql.Table("concepts", sqlMetadata, sql.Column('id', sql.Integer, primary_key=True, nullable=False), sql.Column('message_id', sql.String(32)), sql.Column('channel_id', sql.String(32)), sql.Column('guild_id', sql.String(32)), sql.Column('title', sql.String(1024)), sql.Column('desc', sql.String(2048)), sql.Column('author_id', sql.String(32)), sql.Column('votes', sql.Integer), sql.Column('updated', sql.dialects.mysql.TINYINT(1), nullable=False, server_default="0"))
 
 sqlTables = sqlTablesHolder()
 
@@ -242,6 +245,7 @@ async def vote(ctx):
 		await ctx.send("Használat: `!vote map [idő]`", delete_after=10.0)
 
 @vote.command(name="map")
+@commands.has_any_role(488726625970814977, 488724886366322698)
 async def votemap(ctx, time="120"):
 	if not str(time).isdigit() or int(time) > 3600:
 		time = 120
@@ -283,6 +287,7 @@ async def votemap(ctx, time="120"):
 		await ctx.send(embed=embed, delete_after=300.0)
 
 @vote.command(name="team")
+@commands.has_any_role(488726625970814977, 488724886366322698)
 async def voteteam(ctx, time="120"):
 	if not str(time).isdigit() or int(time) > 3600:
 		time = 120
@@ -322,5 +327,60 @@ async def voteteam(ctx, time="120"):
 		embed.add_field(name="Eredmények:", value=":white_circle: Duo - {0} szavazat\n:red_circle: Trio - {1} szavazat\n:large_blue_circle: Squad - {2} szavazat\n:black_circle: 8 Man Squad - {3} szavazat".format(str(maps[0]["count"]), str(maps[1]["count"]), str(maps[2]["count"]), str(maps[3]["count"])), inline=False)
 		embed.add_field(name="Győztes:", value="{2} **{0}** - {1} szavazattal".format(winner["name"], str(winner["count"]), winner["emoji"]), inline=False)
 		await ctx.send(embed=embed, delete_after=300.0)
+
+
+@bot.command()
+#@commands.has_permissions(administrator=True)
+@commands.has_any_role(488726625970814977, 488724886366322698)
+async def update(ctx):
+	# try:
+		# await ctx.message.delete()
+	# except:
+		# pass
+	r = sqlConn.execute(sqlTables.concepts.select().where(sqlTables.concepts.c.updated == 1))
+	updatedMessages = {"failed":[], "succeeded":[], "reasons":[]}
+	for m in r:
+		try:
+			message = await bot.get_channel(int(m.channel_id)).fetch_message(int(m.message_id))
+		except:
+			updatedMessages["failed"].append(m)
+			updatedMessages["reasons"].append("Nem található üzenet")
+		else:
+			try:
+				member = bot.get_guild(int(m.guild_id)).get_member(int(m.author_id))
+			except:
+				member = None
+			embed = discord.Embed(
+				color=0xf3b221, 
+				description=m.desc,
+				title=m.title)
+			if member:
+				embed.set_footer(text=str(member.display_name) if member.display_name == member.name else str(member.name) + " ("+str(member.display_name)+")", icon_url=member.avatar_url)
+			else:
+				embed.set_footer(text="Névtelen", icon_url="https://cdn.discordapp.com/embed/avatars/0.png")
+			try:
+				await message.edit(embed=embed)
+			except:
+				updatedMessages["failed"].append(m)
+				updatedMessages["reasons"].append("Sikertelen szerkesztés")
+			else:
+				updatedMessages["succeeded"].append(m)
+	embed = discord.Embed(
+		color=0xf3b221, 
+		title="Módosított koncepciók")
+	successStr = ""
+	failStr = ""
+	for success in updatedMessages["succeeded"]:
+		sqlConn.execute(sqlTables.concepts.update().where(sqlTables.concepts.c.id == success.id).values(updated=0))
+		successStr += "ID: {0}, Cím: {1}\n".format(success.id, success.title)
+	for i in range(len(updatedMessages["failed"])):
+		failed = updatedMessages["failed"][i]
+		failStr += "ID: {0}, Cím: {1}, Oka: {2}\n".format(failed.id, failed.title, updatedMessages["reasons"][i])
+	embed.add_field(name="Sikeresen módosult", value=successStr if len(successStr) > 0 else "Nem módosult semmi", inline=False)
+	embed.add_field(name="Sikertelen:", value=failStr if len(failStr) > 0 else "Nincs hiba", inline=False)
+	answer = await ctx.send(embed=embed)
+	await ctx.message.add_reaction("\U0001F5D1") # :wastebasket:
+	attachedMessages[str(ctx.message.id)] = [ctx.message, answer]
+
 
 bot.run(TOKEN)
