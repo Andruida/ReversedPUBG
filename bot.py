@@ -33,7 +33,7 @@ except:
 
 TOKEN = config["token"]
 
-sqlEngine = sql.create_engine("mysql+pymysql://"+config["dbuser"]+":"+config["dbpass"]+"@"+config["dbip"]+":3306/"+config["dbname"], pool_pre_ping=True)
+sqlEngine = sql.create_engine("mysql+pymysql://"+config["dbuser"]+":"+config["dbpass"]+"@"+config["dbip"]+":3306/"+config["dbname"], pool_pre_ping=True, pool_recycle=1800)
 sqlConn = sqlEngine.connect()
 sqlMetadata = sql.MetaData(sqlEngine)
 
@@ -75,6 +75,14 @@ async def on_message(message):
 		# print("["+message.author.name+"] "+message.content)
 	await bot.process_commands(message)
 	
+@bot.event
+async def on_member_join(member):
+	channel = bot.get_channel(488740925422567427)
+	await channel.send("<@"+str(member.id)+"> , üdvözlünk a Reversed PUBG Community szerverén! Sok csirkevacsit kívánunk :wink: !")
+	await asyncio.sleep(60*10)
+	role = discord.utils.get(member.guild.roles, id=488727965908205586)
+	await member.add_roles(role)
+
 
 @bot.event
 async def on_raw_message_delete(payload):
