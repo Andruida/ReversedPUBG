@@ -1,6 +1,3 @@
-# TODO: on_join eventek
-
-
 import discord
 import asyncio
 import json
@@ -78,10 +75,11 @@ async def on_message(message):
 @bot.event
 async def on_member_join(member):
 	channel = bot.get_channel(488740925422567427)
-	await channel.send("<@"+str(member.id)+"> , üdvözlünk a Reversed PUBG Community szerverén! Sok csirkevacsit kívánunk :wink: !")
-	await asyncio.sleep(60*10)
-	role = discord.utils.get(member.guild.roles, id=488727965908205586)
-	await member.add_roles(role)
+	if member.guild.id == channel.guild.id:
+		await channel.send("<@"+str(member.id)+"> , üdvözlünk a Reversed PUBG Community szerverén! Sok csirkevacsit kívánunk :wink: !")
+		await asyncio.sleep(60*10)
+		role = discord.utils.get(member.guild.roles, id=488727965908205586)
+		await member.add_roles(role)
 
 
 @bot.event
